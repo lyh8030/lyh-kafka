@@ -1,0 +1,73 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  ###################### kafka配置 start ######################
+  kafka:
+    # Kafka集群
+    bootstrap-servers: 127.0.0.1:9991,127.0.0.1:9992,127.0.0.1:9993
+    # 生产者
+    producer:
+      # 应答级别:多少个分区副本备份完成时向生产者发送ack确认(可选0、1、all/-1)
+      acks: -1
+      # ID在发出请求时传递给服务器，用于服务器端日志记录
+      client-id: lyh-producer
+      # 每当多个记录被发送到同一分区时，生产者将尝试将记录一起批量处理为更少的请求，
+      # 这有助于提升客户端和服务器上的性能，此配置控制默认批量大小（以字节为单位），
+      # 默认值为16384
+      batch-size: 16384
+      # 提交延时
+      # 当生产端积累的消息达到batch-size或接收到消息linger.ms后,生产者就会将消息提交给kafka
+      # linger.ms为0表示每接收到一条消息就提交给kafka,这时候batch-size其实就没用了
+      # 缓冲区大小
+      buffer-memory: 33554432
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # 自定义分区
+      # 配置事务前缀
+      transaction-id-prefix: test-trans-
+    # 消费者
+    consumer:
+      # 默认消费者组，可以在具体的KafkaListener中指定
+      group-id: lyh-group
+      # ID在发出请求时传递给服务器;用于服务器端日志记录
+      # client-id: lyh-consumer
+      # 是否自动提交offset
+      enable-auto-commit: false
+      # 如果 enable-auto-commit 为true，则消费者偏移自动提交给Kafka的频率（以毫秒为单位），默认值为5000
+      # 这个没有消费也会一直自动提交
+      auto-commit-interval: 1000
+      # 当kafka中没有初始offset或offset超出范围时，自动重置offset策略
+      # earliest: 在偏移量无效的情况下，消费者将从起始位置读取分区的记录
+      # latest: 默认值）在偏移量无效的情况下，消费者将从最新的记录开始读取数据（在消费者启动之后生成的记录）
+      # none:只要有一个分区不存在已提交的offset,就抛出异常;
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # 当listener.type配置为batch时，指定批量消费每次最多消费多少条消息
+      # 一次调用poll()操作时返回的最大记录数，默认值为500
+      max-poll-records: 50
+      properties: {session.timeout.ms: 100000}
+      # 心跳与消费者协调员之间的预期时间（以毫秒为单位），默认值为3000
+      heartbeat-interval: 3000
+      # 服务器应以字节为单位返回获取请求的最小数据量，默认值为1，对应的kafka的参数为fetch.min.bytes
+      fetch-min-size: 1
+      # 如果没有足够的数据立即满足fetch-min-bytes 给出的要求，服务器在回答获取请求之前将阻塞的最长时间（以毫秒为单位）,默认值为500
+      fetch-max-wait: 500
+    listener:
+      # batch-批量消费；single：单个消费
+      type: batch
+      # 当enable.auto.commit的值设置为false时，该值会生效；为true时不会生效
+      # ack-mode: MANUAL-手动/COUNT-计数/TIME-计时/COUNT_TIME-计数计时
+      # ack-mode: COUNT/ 每消费多少提交一次
+      ack-mode: MANUAL
+      #当ackMode为“COUNT”或“COUNT_TIME”时，偏移提交之间的记录数
+      ack-count: 20
+      #当ackMode为“TIME”或“COUNT_TIME”时，偏移提交之间的时间（以毫秒为单位）
+      ack-time: 10000
+      # 一个@KafkaListener会对应一个consumer线程，理论上每个consumer线程应该对应一个唯一client-id，
+      # concurrency即配置consumer线程并发数，例如配置为5，则一个@KafkaListener会对应5个consumer线程
+      concurrency: 5
+  ###################### kafka配置 end ######################
